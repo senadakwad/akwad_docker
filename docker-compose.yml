@@ -1,0 +1,133 @@
+version: "3.9"
+
+services:
+  postgresql:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: 123
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis-cache:
+    image: redis:alpine
+    volumes:
+      - redis_cache_data:/data
+    restart: unless-stopped
+
+  redis-queue:
+    image: redis:alpine
+    volumes:
+      - redis_queue_data:/data
+    restart: unless-stopped
+
+#   One-off utility container to create/configure the bench.
+#   After init, keep it stopped; all other services share the same bench_data.
+  frappe-debugger:
+    image: builder:latest
+    command: sleep infinity
+    working_dir: /home/akwad/
+    volumes:
+      - bench_data:/home/akwad/
+    depends_on:
+      - postgresql
+      - redis-cache
+      - redis-queue
+#    restart: unless-stopped
+
+
+  frappe-web:
+    image: frappe-web:latest
+    command: [
+      "bash","-lc",
+      "cd /home/akwad/${BENCH_NAME}/sites && exec ../env/bin/gunicorn --bind 0.0.0.0:8000 --workers 2 --threads 4 --access-logfile /home/akwad/${BENCH_NAME}/logs/frappe-web.log --error-logfile /home/akwad/${BENCH_NAME}/logs/frappe-web-error.log --timeout 120 --graceful-timeout 30 --max-requests 5000 --max-requests-jitter 500 frappe.app:application --preload"
+    ]
+    working_dir: /home/akwad/${BENCH_NAME}
+    volumes:
+      - bench_data:/home/akwad/
+    depends_on:
+      - postgresql
+      - redis-cache
+      - redis-queue
+    ports:
+      - "8000:8000"
+#    restart: unless-stopped
+
+
+  # Short worker
+  frappe-worker-short:
+    image: base:latest
+    command: bash -lc "
+      cd /home/akwad/${BENCH_NAME}/sites &&
+      ../env/bin/python -m frappe.utils.background_jobs --queue short \
+      >> /home/akwad/${BENCH_NAME}/logs/worker-short.log 2>> /home/akwad/${BENCH_NAME}/logs/worker-short-error.log
+      "
+    working_dir: /home/akwad/${BENCH_NAME}
+    volumes:
+      - bench_data:/home/akwad/
+    depends_on:
+      - redis-queue
+      - postgresql
+#    restart: unless-stopped
+
+  # Long worker
+  frappe-worker-long:
+    image: frappe-web:latest
+    command: bash -lc "
+      cd /home/akwad/${BENCH_NAME}/sites &&
+      ../env/bin/python -m frappe.utils.background_jobs --queue long \
+      >> /home/akwad/${BENCH_NAME}/logs/worker-long.log 2>> /home/akwad/${BENCH_NAME}/logs/worker-long-error.log
+      "
+    working_dir: /home/akwad/${BENCH_NAME}
+    volumes:
+      - bench_data:/home/akwad/
+    depends_on:
+      - redis-queue
+      - postgresql
+#    restart: unless-stopped
+
+  # Scheduler
+  frappe-scheduler:
+    image: base:latest
+    command: >
+      bash -lc "cd /home/akwad/${BENCH_NAME}/sites &&
+      ../env/bin/python -m frappe.utils.scheduler
+      >> /home/akwad/${BENCH_NAME}/logs/scheduler.log
+      2>> /home/akwad/${BENCH_NAME}/logs/scheduler-error.log"
+    working_dir: /home/akwad/${BENCH_NAME}
+    volumes:
+      - bench_data:/home/akwad/
+    depends_on:
+      - redis-queue
+      - postgresql
+#    restart: unless-stopped
+
+#  frappe-socketio:
+#    image: bench:local
+#    command: >
+#      bash -lc "cd /home/akwad/sullam-bench && node apps/frappe/socketio.js"
+#    working_dir: /home/akwad/sullam-bench
+#    volumes:
+#      - bench_data:/home/akwad/
+#    ports:
+#      - "9000:9000"
+#    depends_on:
+#      - redis-cache
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - bench_data:/home/akwad/
+    depends_on:
+      - frappe-web
+    restart: unless-stopped
+
+volumes:
+  bench_data:
+  postgresql-data:
+  redis_cache_data:
+  redis_queue_data:
