@@ -9,14 +9,8 @@ Bench init requires maraidb-client dependencies even when using postgres (make s
 
 ### Setting up common sites config
 ```
-cat > /home/akwad/sullam-bench/sites/common_site_config.json <<'EOF'
+cat > /home/akwad/benches/sullam-bench/sites/common_site_config.json <<'EOF'
 {
-  "db_type": "postgres",
-  "db_host": "postgresql",
-  "db_port": 5432,
-  "db_name": "frappe",
-  "db_user": "postgres",
-  "db_password": "123",
   "redis_cache": "redis://redis-cache:6379",
   "redis_queue": "redis://redis-queue:6379",
   "redis_socketio": "redis://redis-cache:6379",
@@ -26,21 +20,32 @@ cat > /home/akwad/sullam-bench/sites/common_site_config.json <<'EOF'
 EOF
 ```
 
-### Creating a log file for web
-```
-mkdir -p /home/akwad/logs
-```
-
-### 
-
 ### Creating a new site
 ```
-bench new-site test \
+bench new-site test.localhost2 \
+  --db-type postgres \
+  --db-host postgresql \
+  --db-port 5432 \
+  --db-root-username postgres \
+  --db-root-password 123 \
+  --db-name frappe \
   --db-user postgres \
   --db-password 123 \
   --admin-password 123 \
-  --db-type postgres
+  --force
+
   
 ```
 
+### TZDate depedency issue
+```
+source /home/akwad/benches/sullam-bench/env/bin/activate
+pip install tzdata
+deactivate
 
+```
+
+### Nginx frobidden issue
+```
+chmod -R o+rX /home/akwad
+```

@@ -1,7 +1,7 @@
 # ==============================
 # Stage: Bench Builder / Debug
 # ==============================
-FROM base AS builder
+FROM 276418048997.dkr.ecr.me-south-1.amazonaws.com/frappe/base:latest
 
 LABEL maintainer="akwad"
 
@@ -112,5 +112,7 @@ EXPOSE 8000-8005 9000-9005 6787
 
 # Default dev/debug behavior
 WORKDIR /home/akwad
+RUN mkdir benches
+WORKDIR /home/akwad/benches
 ENV PATH="/home/akwad/.local/bin:/home/akwad/.pyenv/shims:/home/akwad/.pyenv/bin:${PATH}"
 CMD ["sleep", "infinity"]

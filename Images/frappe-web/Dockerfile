@@ -1,7 +1,7 @@
 # ===============================
 # Frappe Web Runtime Image
 # ===============================
-FROM base AS frappe-web
+FROM 276418048997.dkr.ecr.me-south-1.amazonaws.com/frappe/base:latest
 
 LABEL maintainer="akwad"
 
