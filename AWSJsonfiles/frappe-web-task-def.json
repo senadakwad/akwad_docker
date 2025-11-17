@@ -1,0 +1,63 @@
+{
+  "family": "frappe-web",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "networkMode": "awsvpc",
+  "cpu": "1024",
+  "memory": "3072",
+  "executionRoleArn": "arn:aws:iam::276418048997:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::276418048997:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "frappe-web",
+      "image": "276418048997.dkr.ecr.me-south-1.amazonaws.com/frappe/web:latest",
+      "essential": true,
+      "workingDirectory": "/home/akwad/bench",
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "mountPoints": [
+        {
+          "sourceVolume": "efs-sites",
+          "containerPath": "/home/akwad/bench/sites",
+          "readOnly": false
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/frappe-web",
+          "awslogs-region": "me-south-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:8000/api/method/ping || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 90
+      }
+    }
+  ],
+  "volumes": [
+    {
+      "name": "efs-sites",
+      "efsVolumeConfiguration": {
+        "fileSystemId": "fs-01f013d27b45aec8e",
+        "rootDirectory": "/home/akwad/benches/sullam-bench/sites"
+      }
+    }
+  ],
+  "runtimePlatform": {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
+  }
+}

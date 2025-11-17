@@ -16,7 +16,7 @@ RUN microdnf install -y dnf && \
       gcc gcc-c++ make pkg-config \
       libffi-devel zlib-devel sqlite-devel xz-devel ncurses-devel file \
       openssl-devel bzip2-devel \
-      postgresql-devel \
+      postgresql-devel postgresql \
       mariadb-connector-c mariadb-connector-c-devel \
       cronie \
       shadow-utils sudo \
@@ -103,7 +103,7 @@ ARG GIT_REPO=https://github.com/frappe/bench.git
 ARG GIT_BRANCH=v5.x
 
 RUN git clone --depth=1 -b ${GIT_BRANCH} ${GIT_REPO} /home/akwad/.bench && \
-    pip install --no-cache-dir --user -e /home/akwad/.bench && \
+    PYENV_VERSION=$PYTHON_VERSION pip install --no-cache-dir -e /home/akwad/.bench && \
     echo "export PATH=\$HOME/.local/bin:\$PATH" >> ~/.bashrc && \
     echo "export BENCH_DEVELOPER=1" >> ~/.bashrc
 
