@@ -50,6 +50,14 @@ services:
       - redis-queue
     ports:
       - "8000:8000"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"     # half a CPU
+          memory: "512M"   # max memory
+        reservations:
+          cpus: "0.25"     # guaranteed CPU
+          memory: "256M"   # guaranteed memory
 ##    restart: unless-stopped
 
 

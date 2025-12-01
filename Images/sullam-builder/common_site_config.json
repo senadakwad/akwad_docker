@@ -1,0 +1,10 @@
+{
+  "db_host": "ip-10-0-197-164.me-south-1.compute.internal",
+  "redis_cache": "redis://ip-10-0-197-164.me-south-1.compute.internal:6379/0",
+  "redis_queue": "redis://ip-10-0-197-164.me-south-1.compute.internal:6379/1",
+  "redis_socketio": "redis://ip-10-0-197-164.me-south-1.compute.internal:6379/2",
+  "socketio_host": "http://ip-10-0-197-164.me-south-1.compute.internal",
+  "socketio_port": 9000,
+  "webserver_port": 8000,
+  "disable_file_logging": 1
+}

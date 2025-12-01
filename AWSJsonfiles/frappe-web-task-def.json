@@ -1,63 +1,102 @@
 {
-  "family": "frappe-web",
-  "requiresCompatibilities": [
-    "FARGATE"
-  ],
+  "family": "sullam-web",
   "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
   "cpu": "1024",
-  "memory": "3072",
+  "memory": "2048",
+
   "executionRoleArn": "arn:aws:iam::276418048997:role/ecsTaskExecutionRole",
   "taskRoleArn": "arn:aws:iam::276418048997:role/ecsTaskExecutionRole",
+
+  "runtimePlatform": {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
+  },
+
   "containerDefinitions": [
     {
-      "name": "frappe-web",
-      "image": "276418048997.dkr.ecr.me-south-1.amazonaws.com/frappe/web:latest",
+      "name": "sullam-web",
+      "image": "276418048997.dkr.ecr.me-south-1.amazonaws.com/sullam/web:latest",
       "essential": true,
-      "workingDirectory": "/home/akwad/bench",
+
+      "mountPoints": [
+        {
+          "containerPath": "/home/akwad/benches/sullam-bench/sites",
+          "sourceVolume": "bench-data",
+          "readOnly": false
+        }
+      ],
+
       "portMappings": [
         {
           "containerPort": 8000,
           "protocol": "tcp"
         }
       ],
-      "mountPoints": [
-        {
-          "sourceVolume": "efs-sites",
-          "containerPath": "/home/akwad/bench/sites",
-          "readOnly": false
-        }
-      ],
+
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/frappe-web",
+          "awslogs-group": "/ecs/sullam-web",
           "awslogs-region": "me-south-1",
-          "awslogs-stream-prefix": "ecs"
+          "awslogs-stream-prefix": "web"
         }
+      }
+    },
+
+    {
+      "name": "sullam-nginx",
+      "image": "276418048997.dkr.ecr.me-south-1.amazonaws.com/sullam/nginx:latest",
+      "essential": true,
+
+      "environment": [
+        { "name": "BENCH_NAME", "value": "sullam-bench" },
+        { "name": "SITE_NAME",  "value": "dockerdemo.akwad.qa" },
+
+        { "name": "SOCKET_HOST", "value": "10.0.197.164" },
+        { "name": "SOCKET_PORT", "value": "9000" }
+      ],
+
+      "dockerLabels": {
+        "traefik.enable": "true",
+        "traefik.http.routers.sullam.entrypoints": "web",
+        "traefik.http.routers.sullam.rule": "Host(`dockerdemo.akwad.qa`)",
+        "traefik.http.services.sullam.loadbalancer.server.port": "80"
       },
-      "healthCheck": {
-        "command": [
-          "CMD-SHELL",
-          "curl -f http://localhost:8000/api/method/ping || exit 1"
-        ],
-        "interval": 30,
-        "timeout": 5,
-        "retries": 3,
-        "startPeriod": 90
+
+      "mountPoints": [
+        {
+          "containerPath": "/home/akwad/benches/sullam-bench/sites",
+          "sourceVolume": "bench-data",
+          "readOnly": true
+        }
+      ],
+
+      "portMappings": [
+        {
+          "containerPort": 80,
+          "protocol": "tcp"
+        }
+      ],
+
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/sullam-web",
+          "awslogs-region": "me-south-1",
+          "awslogs-stream-prefix": "nginx"
+        }
       }
     }
   ],
+
   "volumes": [
     {
-      "name": "efs-sites",
+      "name": "bench-data",
       "efsVolumeConfiguration": {
         "fileSystemId": "fs-01f013d27b45aec8e",
-        "rootDirectory": "/home/akwad/benches/sullam-bench/sites"
+        "rootDirectory": "/sullam-bench/sites"
       }
     }
-  ],
-  "runtimePlatform": {
-    "cpuArchitecture": "X86_64",
-    "operatingSystemFamily": "LINUX"
-  }
+  ]
 }

@@ -1,7 +1,7 @@
 ### Bench creation inside the debugger
 
 ```
-bench init sullam-bench --no-procfile --no-backups --skip-redis-config-generation
+bench init sullam-bench --no-procfile --no-backups --skip-redis-config-generation --python python3.12 --frappe-branch version-15
 ```
 
 
@@ -57,7 +57,7 @@ bench new-site test.localhost2 \
 ```
 bench new-site dockerdemo.akwad.qa \
   --db-type postgres \
-  --db-host ip-10-0-197-164.me-south-1.compute.internal \
+  --db-host 127.0.0.1 \
   --db-port 5432 \
   --db-root-username frappe \
   --db-root-password frappe \

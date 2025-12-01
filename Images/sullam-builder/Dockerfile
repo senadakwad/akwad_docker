@@ -1,4 +1,4 @@
-ARG BUILDER_IMAGE=frappe/builder
+ARG BUILDER_IMAGE=276418048997.dkr.ecr.me-south-1.amazonaws.com/frappe/builder:latest
 
 ARG BENCH_USER=akwad
 ARG BENCH_HOME=/home/${BENCH_USER}
@@ -24,6 +24,10 @@ RUN cd ${BENCHES_DIR}/${BENCH_NAME} && \
     rm -rf env && \
     python3 -m venv env --copies && \
     env/bin/pip install --upgrade pip wheel setuptools && \
-    bench setup requirements
+    bench setup requirements && \
+    bench build --production
+
+COPY common_site_config.json /home/akwad/benches/${BENCH_NAME}/sites/common_sites_config.json
+
 
 WORKDIR ${BENCHES_DIR}/${BENCH_NAME}

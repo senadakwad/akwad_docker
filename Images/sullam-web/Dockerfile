@@ -17,21 +17,41 @@ RUN microdnf install -y \
     rpm -ivh --nodeps /tmp/wkhtmltox.rpm && \
     rm -f /tmp/wkhtmltox.rpm
 
+#Nginx
+RUN chmod o+x /home/akwad/ && \
+    chmod o+r /home/akwad/
+
+RUN microdnf install -y nginx && microdnf clean all
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+RUN curl -sSL -o /usr/local/bin/gosu \
+      https://github.com/tianon/gosu/releases/download/1.17/gosu-amd64 \
+ && chmod +x /usr/local/bin/gosu
+
+RUN cd /home/akwad/benches/sullam-bench/ && mkdir -p logs && chown akwad:akwad logs
+
+
 # Switch back to your runtime user
-USER akwad
 
-VOLUME ["/home/akwad/benches/sullam-bench/sites"]
 
-EXPOSE 8000
+VOLUME ["/home/akwad/benches/sullam-bench/sites/dockerdemo.akwad.qa"]
 
-CMD ["bash", "-lc", \
-  "mkdir -p logs && cd sites && exec ../env/bin/gunicorn \
-     --bind 0.0.0.0:8000 \
-     --workers 2 \
-     --threads 4 \
-     --timeout 120 \
-     --graceful-timeout 30 \
-     --max-requests 5000 \
-     --max-requests-jitter 500 \
-     frappe.app:application --preload"]
+EXPOSE 80 8000
+
+CMD ["bash", "-lc", "\
+    mkdir -p logs && \
+    nginx -g 'daemon off;' & \
+    gosu akwad bash -lc 'cd sites && exec ../env/bin/gunicorn \
+        --bind 0.0.0.0:8000 \
+        --workers 2 \
+        --threads 4 \
+        --timeout 120 \
+        --graceful-timeout 30 \
+        --max-requests 5000 \
+        --max-requests-jitter 500 \
+        frappe.app:application --preload' \
+"]
+
+
 

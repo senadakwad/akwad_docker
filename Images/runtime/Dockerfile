@@ -46,6 +46,8 @@ WORKDIR ${BENCHES_DIR}/${BENCH_NAME}
 ########################################
 COPY --from=sullam/builder ${BENCHES_DIR}/${BENCH_NAME}/env ./env
 COPY --from=sullam/builder ${BENCHES_DIR}/${BENCH_NAME}/apps ./apps
+COPY --from=sullam/builder ${BENCHES_DIR}/${BENCH_NAME}/sites/apps.txt ./sites/apps.txt
+
 # Copy Python runtime
 COPY --from=sullam/builder /home/akwad/.pyenv/versions/3.12.6/bin \
     /home/akwad/python/bin
@@ -56,11 +58,7 @@ COPY --from=sullam/builder /home/akwad/.pyenv/versions/3.12.6/lib/libpython3.12.
 COPY --from=sullam/builder /home/akwad/.pyenv/versions/3.12.6/lib/python3.12 \
     /home/akwad/python/lib/python3.12
 
-########################################
-# Copy only build assets
-########################################
-# This folder is static and identical across containers for a release
-COPY --from=sullam/builder ${BENCHES_DIR}/${BENCH_NAME}/sites/assets ./sites/assets
+COPY ../sullam-builder/common_site_config.json /home/akwad/benches/sullam-bench/sites/common_site_config.json
 
 ENV PYTHONHOME=/home/akwad/python
 ENV PATH=/home/akwad/python/bin:$PATH

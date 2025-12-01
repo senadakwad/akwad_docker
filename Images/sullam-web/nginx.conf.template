@@ -1,0 +1,61 @@
+server {
+    listen 80;
+    server_name ${SITE_NAME};
+
+    client_max_body_size 50m;
+
+    root /home/akwad/benches/${BENCH_NAME}/sites;
+
+    # ------------ Static Assets ------------
+    location /assets/ {
+        alias /home/akwad/benches/${BENCH_NAME}/sites/assets/;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        expires max;
+        disable_symlinks off;
+        access_log off;
+    }
+
+    # ------------ Public /files/ ------------
+    location /files/ {
+        alias /home/akwad/benches/${BENCH_NAME}/sites/${SITE_NAME}/public/files/;
+        add_header Cache-Control "public, max-age=86400";
+        expires 1d;
+        disable_symlinks off;
+        access_log off;
+    }
+
+    # ------------ Private Files ------------
+    location /private/ {
+        internal;
+        alias /home/akwad/benches/${BENCH_NAME}/sites/${SITE_NAME}/private/;
+        disable_symlinks off;
+    }
+
+    # ------------ SocketIO (external EC2) ------------
+    location /socket.io {
+        proxy_pass http://${SOCKET_HOST}:${SOCKET_PORT};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+    }
+
+    # ------------ Frappe Web / API ------------
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Frappe-Site-Name ${SITE_NAME};
+
+        proxy_read_timeout 120s;
+        proxy_connect_timeout 75s;
+        proxy_redirect off;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
