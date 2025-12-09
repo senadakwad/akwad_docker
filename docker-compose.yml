@@ -23,7 +23,7 @@ services:
 #   One-off utility container to create/configure the bench.
 #   After init, keep it stopped; all other services share the same bench_data.
   frappe-debugger:
-    image: frappe/builder:latest
+    image: 276418048997.dkr.ecr.me-south-1.amazonaws.com/frappe/builder:latest
     command: sleep infinity
     working_dir: /home/akwad
     volumes:
@@ -32,11 +32,11 @@ services:
       - postgresql
       - redis-cache
       - redis-queue
-##    restart: unless-stopped
+###    restart: unless-stopped
 
 
   frappe-web:
-    image: frappe/web
+    image: 276418048997.dkr.ecr.me-south-1.amazonaws.com/frappe/builder:latest
     command: [
       "bash","-lc",
       "cd /home/akwad/benches/${BENCH_NAME}/sites && exec ../env/bin/gunicorn --bind 0.0.0.0:8000 --workers 2 --threads 4 --access-logfile /home/akwad/benches/${BENCH_NAME}/logs/frappe-web.log --error-logfile /home/akwad/benches/${BENCH_NAME}/logs/frappe-web-error.log --timeout 120 --graceful-timeout 30 --max-requests 5000 --max-requests-jitter 500 frappe.app:application --preload"
@@ -59,64 +59,61 @@ services:
           cpus: "0.25"     # guaranteed CPU
           memory: "256M"   # guaranteed memory
 ##    restart: unless-stopped
-
-
-  # Short worker
+#
+#
   frappe-worker-short:
-    image: 276418048997.dkr.ecr.me-south-1.amazonaws.com/frappe/base:latest
-    command: [
-      "bash", "-lc",
-      "cd /home/akwad/benches/${BENCH_NAME}/sites && ./run_worker.sh ${SITE_NAME} short ${BENCH_NAME}"
-    ]
+    image: 276418048997.dkr.ecr.me-south-1.amazonaws.com/frappe/builder:latest
+    command: >
+      bash -lc "
+      cd /home/akwad/benches/${BENCH_NAME}/sites &&
+      ../env/bin/python -m frappe.utils.bench_helper frappe worker --queue short
+      "
     working_dir: /home/akwad
     volumes:
       - bench_data:/home/akwad
     depends_on:
       - redis-queue
       - postgresql
-#    restart: unless-stopped
+
 
   # Long worker
   frappe-worker-long:
-    image: 276418048997.dkr.ecr.me-south-1.amazonaws.com/frappe/base:latest
-    command: [
-      "bash", "-lc",
-      "cd /home/akwad/benches/${BENCH_NAME}/sites && ./run_worker.sh ${SITE_NAME} long ${BENCH_NAME}"
-    ]
+    image: 276418048997.dkr.ecr.me-south-1.amazonaws.com/frappe/builder:latest
+    command: >
+      bash -lc "
+      cd /home/akwad/benches/${BENCH_NAME}/sites &&
+      ../env/bin/python -m frappe.utils.bench_helper frappe worker --queue default,long
+      "
     working_dir: /home/akwad
     volumes:
       - bench_data:/home/akwad
     depends_on:
       - redis-queue
       - postgresql
-#    restart: unless-stopped
 
-  # Scheduler
-#      bash -lc "cd /home/akwad/benches/${BENCH_NAME}/sites &&
-#      export LD_LIBRARY_PATH=/usr/lib64 &&
-#      ../env/bin/python -m frappe.utils.scheduler
-#      >> /home/akwad/benches/${BENCH_NAME}/logs/scheduler.log
-#      2>> /home/akwad/benches/${BENCH_NAME}/logs/scheduler-error.log"
+
   frappe-scheduler:
     image: 276418048997.dkr.ecr.me-south-1.amazonaws.com/frappe/base:latest
     command: >
-      bash -lc "cd /home/akwad/benches/${BENCH_NAME}/sites &&
+      bash -lc "
+      cd /home/akwad/benches/${BENCH_NAME}/sites &&
       export LD_LIBRARY_PATH=/usr/lib64 &&
-      ../env/bin/python -m frappe.utils.scheduler
-      >> /home/akwad/benches/${BENCH_NAME}/logs/scheduler.log
-      2>> /home/akwad/benches/${BENCH_NAME}/logs/scheduler-error.log"
+      ../env/bin/python -m frappe.utils.bench_helper frappe schedule
+      "
     working_dir: /home/akwad
     volumes:
       - bench_data:/home/akwad
     depends_on:
       - redis-queue
       - postgresql
-#    restart: unless-stopped
 
   frappe-socketio:
     image: node:18
     command: >
-      bash -lc "cd /home/akwad/benches/sullam-bench && node apps/frappe/socketio.js"
+      bash -lc "
+      cd /home/akwad/benches/${BENCH_NAME} &&
+      node apps/frappe/socketio.js
+      "
     working_dir: /home/akwad
     volumes:
       - bench_data:/home/akwad
@@ -125,6 +122,7 @@ services:
     depends_on:
       - redis-cache
 
+#
   nginx:
     image: nginx:alpine
     container_name: nginx

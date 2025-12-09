@@ -46,7 +46,6 @@ bench new-site test.localhost2 \
   --db-root-username postgres \
   --db-root-password 123 \
   --db-name frappe \
-  --db-user postgres \
   --db-password 123 \
   --admin-password 123 \
   --force
